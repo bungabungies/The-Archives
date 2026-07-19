@@ -178,6 +178,15 @@ button{background:none;border:none;padding:0;cursor:pointer}
 .rpage blockquote{margin:1.5em 0;padding-left:1.1em;border-left:2px solid currentColor;opacity:.78;font-style:italic}
 .rpage hr{border:none;text-align:center;margin:2.4em 0}
 .rpage hr:after{content:"❦";opacity:.35;font-size:.9em}
+.rpage.claudeui h1{font-size:1.42em;font-weight:650;letter-spacing:-.015em;color:#FAF9F5;margin:0 0 .9em}
+.rpage.claudeui h2{font-size:1.16em;font-weight:650;letter-spacing:-.01em;color:#FAF9F5;margin:2.1em 0 .7em}
+.rpage.claudeui p{margin:0 0 1.05em}
+.rpage.claudeui strong{color:#FAF9F5;font-weight:650}
+.rpage.claudeui em{color:#EDEBE5}
+.rpage.claudeui blockquote{border-left:2px solid #4A4A46;color:#B8B5AD;font-style:normal;padding-left:1.15em;margin:1.5em 0}
+.rpage.claudeui hr{border-top:1px solid #3A3A37;margin:2.1em 0;height:0}
+.rpage.claudeui hr:after{content:""}
+.rpage.claudeui mark{background:rgba(224,155,90,.32);color:#FAF9F5}
 .rpage mark{background:rgba(245,213,122,.5);color:inherit;border-radius:3px;padding:1px 0}
 .rend{margin-top:3.4em;text-align:center;opacity:.85}
 .rend svg{width:64px;height:64px;opacity:.3;margin-bottom:10px}
@@ -451,6 +460,9 @@ const MOTIF={
 const svg=(k,cls)=>`<svg class="${cls||""}" viewBox="0 0 44 44" fill="currentColor">${MOTIF[k]||MOTIF.tree}</svg>`;
 
 const THEMES={
+  claude:{name:"Claude",bg:"#262624",fg:"#E4E2DC",
+    font:"-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",
+    tex:"none",lh:17,size:17,mg:28,ui:"claudeui"},
   ao3:{name:"AO3",bg:"#FFFFFF",fg:"#2A2A2A",font:"Verdana,'Lucida Grande',Helvetica,sans-serif",tex:"none",lh:15,size:16},
   paper:{name:"Paper",bg:"#F7F2E6",fg:"#2C2822",font:"'Iowan Old Style',Charter,Georgia,serif",tex:"none"},
   lontar:{name:"Lontar",bg:"#E4D5B2",fg:"#3C2B17",font:"'Hoefler Text',Baskerville,Georgia,serif",align:"justify",
@@ -473,7 +485,8 @@ const PALETTES={
 };
 const FONTS=[["Iowan","'Iowan Old Style',Charter,Georgia,serif"],["Hoefler","'Hoefler Text',Georgia,serif"],
   ["Baskerville","Baskerville,Georgia,serif"],["Palatino","Palatino,Georgia,serif"],
-  ["Verdana","Verdana,'Lucida Grande',Helvetica,sans-serif"],["Avenir","'Avenir Next',-apple-system,sans-serif"]];
+  ["Verdana","Verdana,'Lucida Grande',Helvetica,sans-serif"],["Avenir","'Avenir Next',-apple-system,sans-serif"],
+  ["System","-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"]];
 const SOUNDS=["off","rain","fire","night","ocean"];
 const SOUNDNAME={off:"Off",rain:"Rain",fire:"Fireplace",night:"Crickets",ocean:"Ocean"};
 
@@ -823,6 +836,7 @@ function applyTheme(){
   const t=THEMES[curBook.theme]||THEMES.paper,S=DB.settings,R=$("reader"),P=$("rpage");
   R.style.background=t.bg;R.style.backgroundImage=t.tex;R.style.backgroundAttachment="fixed";R.style.color=t.fg;
   P.style.textAlign=t.align||"left";
+  P.className="rpage"+(t.ui?" "+t.ui:"");
   document.querySelector("meta[name=theme-color]").setAttribute("content",t.bg);
   P.style.fontFamily=S.font;P.style.fontSize=S.size+"px";P.style.lineHeight=S.lh/10;
   P.style.paddingLeft=S.mg+"px";P.style.paddingRight=S.mg+"px";
@@ -970,6 +984,7 @@ function setTheme(k){
   curBook.theme=k;save();const t=THEMES[k];
   if(t.size){DB.settings.size=t.size;$("s-size").value=t.size}
   if(t.lh){DB.settings.lh=t.lh;$("s-lh").value=t.lh}
+  if(t.mg){DB.settings.mg=t.mg;$("s-mg").value=t.mg}
   if(FONTS.some(f=>f[1]===t.font)){DB.settings.font=t.font;markFont()}
   labels();
   document.querySelectorAll("#s-theme .tchip").forEach(c=>c.classList.toggle("on",c.dataset.k===k));
