@@ -369,6 +369,7 @@ input[type=range]{width:100%;accent-color:var(--clay);margin:0}
   <div class="pad">
     <h1 class="h1" style="margin-bottom:20px">More</h1>
     <button class="rowbtn" onclick="go('index')">Character index <span>›</span></button>
+    <button class="rowbtn danger" onclick="resetStats()">Reset reading stats <span>›</span></button>
     <div class="label">Backup</div>
     <p class="hint" style="margin-top:0">Everything lives on this phone only. Save a backup to Files or Drive now and then.</p>
     <button class="pill" onclick="exportData()">Download backup</button>
@@ -435,6 +436,10 @@ input[type=range]{width:100%;accent-color:var(--clay);margin:0}
   </div>
   <div class="tabpane" id="p-scroll">
     <div class="ctl"><label>Auto-scroll speed <em id="l-sp"></em></label><input type="range" id="s-sp" min="6" max="120" step="2"></div>
+    <div class="ctl"><label>Counts as read</label><div class="chips" id="s-wpm">
+      <button class="chip" onclick="setWpm(300)">Strict</button>
+      <button class="chip" onclick="setWpm(450)">Normal</button>
+      <button class="chip" onclick="setWpm(0)">Off</button></div></div>
     <p class="hint" style="margin:0">Touching the page pauses it.</p>
   </div>
 </div>
@@ -502,7 +507,7 @@ const SEEDNAMES=["Galih","Dimas","Cinta","Kemal","Ali","Narendra","Mahesa","Kafk
   "Radja","Raja","Arka","Arya","Bima","Sena","Nathan","Bram","Asmara","Juwita","Anjani","Tasya","Katyana","Abi","Kanda"];
 const CLOSERS=["Rest here a while.","The page will wait.","Take a breath.","Stay a moment.","Let it settle."];
 let DB={books:[],highlights:[],days:{},lastRead:null,achieved:{},flags:{},names:SEEDNAMES.slice(),
-  settings:{size:18,lh:17,mg:24,sp:34,font:FONTS[0][1],vol:45,view:"grid",filter:"__all",candle:1}};
+  settings:{size:18,lh:17,mg:24,sp:34,font:FONTS[0][1],vol:45,view:"grid",filter:"__all",candle:1,wpm:450}};
 let saveT=null;
 function save(){clearTimeout(saveT);saveT=setTimeout(()=>rawSet(JSON.stringify(DB)),250)}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
@@ -531,6 +536,7 @@ function countWords(md){const t=md.replace(/[#>*_`]/g," ").trim();return t?t.spl
 
 let curBook=null,curChap=null,editing=null,editChapId=null,chapEditMode=false;
 let auto=false,autoRAF=null,lastT=0,acc=0,chromeOn=false,timeTick=null,secBank=0;
+let loadingChap=false,skimWarned=false;
 
 /* ============ AMBIENT AUDIO ============ */
 let AC=null,master=null,live=[],ticker=null,curSound="off";
@@ -846,7 +852,9 @@ function applyTheme(){
   P.style.paddingLeft=S.mg+"px";P.style.paddingRight=S.mg+"px";
 }
 function openChap(id){
-  curChap=curBook.chapters.find(c=>c.id===id);if(!curChap)return;
+  const nc=curBook.chapters.find(c=>c.id===id);if(!nc)return;
+  loadingChap=true;skimWarned=false;
+  curChap=nc;
   if(curChap.done){DB.flags.rereads=(DB.flags.rereads||0)+1}
   const closing=curBook.closing||CLOSERS[Math.abs(hashStr(curChap.id))%CLOSERS.length];
   $("rpage").innerHTML=md2html(curChap.md)+`<div class="rend"><div class="breath"></div>${svg(curBook.motif||"tree")}
@@ -859,7 +867,12 @@ function openChap(id){
   $("candle").style.display=DB.settings.candle?"block":"none";
   $("rprog").style.opacity=DB.settings.candle?"0":"1";
   closeMargCard();
-  requestAnimationFrame(()=>{R.scrollTop=(curChap.scroll||0)*Math.max(1,R.scrollHeight-R.clientHeight);updProg()});
+  R.scrollTop=0;
+  requestAnimationFrame(()=>{
+    const startAt=(curChap.scroll||0)>.97?0:(curChap.scroll||0);
+    R.scrollTop=startAt*Math.max(1,R.scrollHeight-R.clientHeight);
+    requestAnimationFrame(()=>{loadingChap=false;updProg()});
+  });
   showChrome(true);setTimeout(()=>{if(!$("sheet").classList.contains("on"))showChrome(false)},2400);
   DB.lastRead={bookId:curBook.id,chapId:curChap.id,at:Date.now()};save();
   $("btn-snd").classList.toggle("on",curSound!=="off");
@@ -876,16 +889,36 @@ function closeReader(){
   renderBook();go("book");
 }
 function updProg(){
+  if(loadingChap)return;
   const R=$("reader"),max=Math.max(1,R.scrollHeight-R.clientHeight),p=Math.min(1,R.scrollTop/max);
   $("rprog").style.width=p*100+"%";
-  if(curChap){curChap.scroll=p;
-    if(p>.97&&!curChap.done){curChap.done=true;toast("Chapter finished");bank(curChap.words);
-      const h=new Date().getHours();
-      if(h<4)DB.flags.owl=true; if(h>=4&&h<7)DB.flags.lark=true;
-      const dk=today();DB.days[dk].chaps=(DB.days[dk].chaps||0)+1;
-      checkAchv()}
+  if(curChap){
+    curChap.scroll=p;
+    maybeComplete();
     drawCandle(p);
-    if(DB.lastRead)DB.lastRead.at=Date.now();save()}
+    if(DB.lastRead)DB.lastRead.at=Date.now();
+    save();
+  }
+}
+/* A chapter only counts as read if you reached the end AND spent a
+   plausible amount of time there. Guards against scroll-skimming. */
+function maybeComplete(){
+  if(!curChap||curChap.done)return;
+  if((curChap.scroll||0)<=.97)return;
+  const cap=DB.settings.wpm||0;
+  const need=cap?Math.max(15,curChap.words/cap*60):0;
+  const spent=curChap.secs||0;
+  if(spent>=need){
+    curChap.done=true;bank(curChap.words);
+    const h=new Date().getHours();
+    if(h<4)DB.flags.owl=true; if(h>=4&&h<7)DB.flags.lark=true;
+    const dk=today();DB.days[dk]=DB.days[dk]||{min:0,words:0};
+    DB.days[dk].chaps=(DB.days[dk].chaps||0)+1;
+    save();checkAchv();toast("Chapter finished");
+  }else if(!skimWarned){
+    skimWarned=true;
+    toast("Skimmed — not counted. About "+Math.max(1,Math.ceil((need-spent)/60))+" more min to mark it read.");
+  }
 }
 $("reader").addEventListener("scroll",updProg,{passive:true});
 $("reader").addEventListener("click",e=>{
@@ -917,7 +950,9 @@ function stopAuto(){auto=false;cancelAnimationFrame(autoRAF);
   const btn=$("btn-auto");btn.classList.remove("on");btn.querySelector("b").textContent="▶"}
 $("reader").addEventListener("touchstart",()=>{if(auto)stopAuto()},{passive:true});
 
-function startTimer(){stopTimer();timeTick=setInterval(()=>{if(document.hidden)return;secBank+=10;
+function startTimer(){stopTimer();timeTick=setInterval(()=>{if(document.hidden)return;
+  secBank+=10;
+  if(curChap&&!loadingChap){curChap.secs=(curChap.secs||0)+10;maybeComplete()}
   if(secBank>=60){addMinutes(Math.floor(secBank/60));secBank%=60}},10000)}
 function stopTimer(){clearInterval(timeTick);timeTick=null}
 function addMinutes(m){const d=today();DB.days[d]=DB.days[d]||{min:0,words:0};DB.days[d].min+=m;save()}
@@ -976,6 +1011,7 @@ function openSheet(which){
   $("s-sound").innerHTML=SOUNDS.map(k=>
     `<button class="chip ${curSound===k?"on":""}" data-k="${k}" onclick="setSound('${k}')">${SOUNDNAME[k]}</button>`).join("");
   document.querySelectorAll("#s-candle .chip").forEach((c,i)=>c.classList.toggle("on",(i===0)===!!DB.settings.candle));
+  markWpm();
   pane(which||"type");
   $("sheet").classList.add("on");$("tap").classList.add("on");showChrome(false);
 }
@@ -1323,6 +1359,10 @@ ${items}
 
 /* ============ CANDLE ============ */
 function hashStr(x){let h=0;for(let i=0;i<x.length;i++)h=(h*31+x.charCodeAt(i))|0;return h}
+function setWpm(v){DB.settings.wpm=v;save();markWpm();
+  toast(v?("Needs about "+Math.ceil(1000/v)+" min per 1,000 words."):"Anything you scroll to the end of now counts.")}
+function markWpm(){const o=[300,450,0];
+  document.querySelectorAll("#s-wpm .chip").forEach((c,i)=>c.classList.toggle("on",o[i]===(DB.settings.wpm||0)))}
 function setCandle(v){DB.settings.candle=v;save();
   document.querySelectorAll("#s-candle .chip").forEach((c,i)=>c.classList.toggle("on",(i===0)===!!v));
   $("candle").style.display=v?"block":"none";
@@ -1487,6 +1527,12 @@ function suggestNames(){
   save();renderIndex();toast(n+" added.");
 }
 
+function resetStats(){
+  if(!confirm("Clear all reading history — hours, words, streak, and every chapter's read/unread mark?\n\nYour books, chapters, and highlights are kept."))return;
+  DB.days={};DB.flags.best=0;
+  DB.books.forEach(b=>b.chapters.forEach(c=>{c.done=false;c.scroll=0;c.secs=0}));
+  DB.lastRead=null;save();toast("Reading history cleared.");go("library");
+}
 function exportData(){
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob([JSON.stringify(DB)],{type:"application/json"}));
@@ -1517,6 +1563,7 @@ function renderUsage(){
   DB.achieved=DB.achieved||{};DB.flags=DB.flags||{};
   DB.names=(DB.names&&DB.names.length)?DB.names:SEEDNAMES.slice();
   if(DB.settings.candle===undefined)DB.settings.candle=1;
+  if(DB.settings.wpm===undefined)DB.settings.wpm=450;
   DB.books.forEach(b=>{b.chapters=b.chapters||[];b.pal=b.pal||"apricot";b.motif=b.motif||"tree";
     b.coll=b.coll||"";b.sound=b.sound||"off";b.closing=b.closing||""});
   const lastOpen=DB.flags.lastOpen;
