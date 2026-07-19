@@ -145,7 +145,33 @@ button{background:none;border:none;padding:0;cursor:pointer}
 #reader{position:fixed;inset:0;z-index:60;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch}
 #reader.on{display:block}
 .rprog{position:fixed;top:0;left:0;height:3px;z-index:72;background:var(--apricot);width:0;border-radius:0 3px 3px 0;transition:width .12s}
-.rpage{max-width:760px;margin:0 auto;padding:calc(var(--safeT) + 78px) 24px calc(var(--safeB) + 200px)}
+.marg{position:absolute;width:7px;border-radius:4px;background:rgba(206,158,58,.85);cursor:pointer;transition:width .15s}
+.marg.hasnote{background:rgba(198,123,92,.95);width:9px}
+.marg:active{width:12px}
+.margcard{position:fixed;left:14px;right:14px;bottom:calc(var(--safeB) + 92px);z-index:79;background:var(--card);color:var(--ink);
+  border-radius:20px;padding:18px;box-shadow:0 12px 34px rgba(60,45,25,.3);display:none}
+.margcard.on{display:block;animation:rise .3s cubic-bezier(.22,.9,.3,1) both}
+.margcard q{display:block;font-size:15px;line-height:1.55;font-style:italic}
+.margcard .n{font-size:13.5px;color:var(--soft);margin-top:10px;line-height:1.5}
+.margcard .row{display:flex;gap:8px;margin-top:14px}
+.margcard .row button{flex:1;padding:11px;border-radius:14px;background:var(--sand);font-size:12.5px;font-weight:700}
+#candle{position:fixed;left:14px;bottom:calc(var(--safeB) + 18px);z-index:66;pointer-events:none;display:none;opacity:.9}
+.closing{opacity:.6;font-style:italic;font-size:.92em;margin:1.6em 0 2.2em!important}
+.breath{height:26vh}
+.achv{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.ach{background:var(--card);border-radius:16px;padding:13px;box-shadow:0 2px 8px rgba(120,95,60,.06);animation:rise .4s both}
+.ach.lock{background:var(--sand);box-shadow:none;opacity:.62}
+.ach b{display:block;font-size:13px;font-weight:700;margin-bottom:3px}
+.ach span{font-size:11px;color:var(--soft);line-height:1.4;display:block}
+.idx{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.nchip{padding:9px 14px;border-radius:18px;background:var(--card);font-size:13.5px;font-weight:600;box-shadow:0 2px 8px rgba(120,95,60,.06)}
+.nchip b{color:var(--clay);margin-left:7px;font-size:12px}
+.nchip.on{background:var(--ink);color:#FFF6E9}
+.nchip.on b{color:var(--butter)}
+.idxrow{width:100%;text-align:left;padding:13px 15px;background:var(--card);border-radius:16px;margin-bottom:8px;
+  font-size:14px;font-weight:600;display:flex;justify-content:space-between;gap:10px;box-shadow:0 2px 8px rgba(120,95,60,.06)}
+.idxrow span{color:var(--soft);font-size:12px;font-weight:600;flex:none}
+.rpage{position:relative;max-width:760px;margin:0 auto;padding:calc(var(--safeT) + 78px) 24px calc(var(--safeB) + 200px)}
 .rpage h1{font-size:1.5em;line-height:1.25;margin:0 0 1.5em;font-weight:700}
 .rpage h2{font-size:1.18em;margin:2em 0 .8em;font-weight:700}
 .rpage p{margin:0 0 1.15em;text-wrap:pretty}
@@ -274,6 +300,7 @@ input[type=range]{width:100%;accent-color:var(--clay);margin:0}
     <div class="field"><label>Collection</label><input id="f-coll" list="colls" placeholder="e.g. Walet reef canon"><datalist id="colls"></datalist></div>
     <p class="hint">Books sharing a collection name get grouped together on the shelf. Leave blank for none.</p>
     <div class="field"><label>Description</label><textarea id="f-desc" placeholder="The blurb goes here."></textarea></div>
+    <div class="field"><label>Closing line</label><input id="f-close" placeholder="optional — shown at the end of every chapter"></div>
     <div class="field"><label>Cover colour</label><div class="chips" id="f-pal"></div></div>
     <div class="field"><label>Cover motif</label><div class="chips" id="f-motif"></div></div>
     <div class="field"><label>Reading theme</label><div class="chips" id="f-themes"></div></div>
@@ -312,10 +339,24 @@ input[type=range]{width:100%;accent-color:var(--clay);margin:0}
   <div class="pad"><h1 class="h1" style="margin-bottom:26px">Highlights</h1><div id="hlbody"></div></div>
 </div>
 
+<div class="view" id="v-index">
+  <div class="topbar"><button class="round" onclick="go('backup')">←</button></div>
+  <div class="pad">
+    <h1 class="h1" style="margin-bottom:8px">Character index</h1>
+    <p class="hint">Every name, and everywhere it appears across the archive.</p>
+    <div class="idx" id="idxnames"></div>
+    <div id="idxdetail"></div>
+    <button class="ghost" onclick="addName()">Add a name</button>
+    <button class="ghost" onclick="suggestNames()">Scan for names I've missed</button>
+  </div>
+</div>
+
 <div class="view" id="v-backup">
   <div class="topbar"><button class="round" onclick="go('library')">←</button></div>
   <div class="pad">
-    <h1 class="h1" style="margin-bottom:20px">Backup</h1>
+    <h1 class="h1" style="margin-bottom:20px">More</h1>
+    <button class="rowbtn" onclick="go('index')">Character index <span>›</span></button>
+    <div class="label">Backup</div>
     <p class="hint" style="margin-top:0">Everything lives on this phone only. Save a backup to Files or Drive now and then.</p>
     <button class="pill" onclick="exportData()">Download backup</button>
     <label class="ghost">Restore from a backup
@@ -343,6 +384,17 @@ input[type=range]{width:100%;accent-color:var(--clay);margin:0}
   <button onclick="nextChap()"><b>›</b>Next</button>
 </div></div>
 <button class="hlpop" id="hlpop" onclick="addHighlight()">Highlight</button>
+<div id="candle"><svg viewBox="0 0 26 92" width="24" height="85">
+  <ellipse cx="13" cy="86" rx="12" ry="4.5" fill="rgba(140,110,60,.25)"/>
+  <ellipse id="cpool" cx="13" cy="84" rx="4" ry="2" fill="#EBDCBC" opacity="0"/>
+  <rect id="cbody" x="6" y="26" width="14" height="58" rx="3" fill="#F4E6C8"/>
+  <rect id="cbody2" x="6" y="26" width="5" height="58" fill="rgba(255,255,255,.4)"/>
+  <rect id="cwick" x="12.2" y="19" width="1.6" height="8" fill="#7A6A55"/>
+  <ellipse id="cglow" cx="13" cy="14" rx="15" ry="17" fill="#F5C542" opacity=".16"/>
+  <ellipse id="cflame" class="flame" cx="13" cy="14" rx="4.2" ry="7.5" fill="#F2B735"/>
+  <ellipse id="cflame2" class="flame" cx="13" cy="15.5" rx="2" ry="4" fill="#FFF0BE"/>
+</svg></div>
+<div class="margcard" id="margcard"></div>
 
 <div class="tap" id="tap" onclick="closeSheet()"></div>
 <div class="sheet" id="sheet">
@@ -359,7 +411,10 @@ input[type=range]{width:100%;accent-color:var(--clay);margin:0}
     <div class="ctl"><label>Margins <em id="l-mg"></em></label><input type="range" id="s-mg" min="10" max="60" step="2"></div>
     <div class="ctl"><label>Typeface</label><div class="chips" id="s-font"></div></div>
   </div>
-  <div class="tabpane" id="p-theme"><div class="ctl"><label>Theme for this book</label><div class="chips" id="s-theme"></div></div></div>
+  <div class="tabpane" id="p-theme"><div class="ctl"><label>Theme for this book</label><div class="chips" id="s-theme"></div></div>
+    <div class="ctl"><label>Chapter progress</label><div class="chips" id="s-candle">
+      <button class="chip" onclick="setCandle(1)">Candle</button>
+      <button class="chip" onclick="setCandle(0)">Thin bar</button></div></div></div>
   <div class="tabpane" id="p-sound">
     <div class="ctl"><label>Soundscape</label><div class="chips" id="s-sound"></div></div>
     <div class="ctl"><label>Volume <em id="l-vol"></em></label><input type="range" id="s-vol" min="0" max="100" step="5"></div>
@@ -426,8 +481,11 @@ const KEY="archives:v1";
 const hasWS=typeof window.storage!=="undefined"&&window.storage;
 async function rawGet(){if(hasWS){try{const r=await window.storage.get(KEY);return r?r.value:null}catch(e){return null}}try{return localStorage.getItem(KEY)}catch(e){return null}}
 async function rawSet(v){if(hasWS){try{await window.storage.set(KEY,v)}catch(e){}return}try{localStorage.setItem(KEY,v)}catch(e){toast("Storage full. Download a backup, then delete an old book.")}}
-let DB={books:[],highlights:[],days:{},lastRead:null,
-  settings:{size:18,lh:17,mg:24,sp:34,font:FONTS[0][1],vol:45,view:"grid",filter:"__all"}};
+const SEEDNAMES=["Galih","Dimas","Cinta","Kemal","Ali","Narendra","Mahesa","Kafka","Rakha","Keenan","Kinan",
+  "Radja","Raja","Arka","Arya","Bima","Sena","Nathan","Bram","Asmara","Juwita","Anjani","Tasya","Katyana","Abi","Kanda"];
+const CLOSERS=["Rest here a while.","The page will wait.","Take a breath.","Stay a moment.","Let it settle."];
+let DB={books:[],highlights:[],days:{},lastRead:null,achieved:{},flags:{},names:SEEDNAMES.slice(),
+  settings:{size:18,lh:17,mg:24,sp:34,font:FONTS[0][1],vol:45,view:"grid",filter:"__all",candle:1}};
 let saveT=null;
 function save(){clearTimeout(saveT);saveT=setTimeout(()=>rawSet(JSON.stringify(DB)),250)}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
@@ -539,7 +597,7 @@ function go(v){
   $("v-"+v).classList.add("on");window.scrollTo(0,0);
   $("dock").style.display=["library","stats","book"].includes(v)?"flex":"none";
   document.querySelectorAll("#dock button[data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===v));
-  try{({library:renderShelf,stats:renderStats,book:renderBook,hl:renderHL,backup:renderUsage}[v]||(()=>{}))()}
+  try{({library:renderShelf,stats:renderStats,book:renderBook,hl:renderHL,backup:renderUsage,index:renderIndex}[v]||(()=>{}))()}
   catch(err){toast("Something failed to draw: "+err.message)}
 }
 function fabAction(){$("v-book").classList.contains("on")?go("chap"):newBook()}
@@ -696,7 +754,7 @@ function delChapter(){
   save();toast("Deleted.");go("book");
 }
 
-function newBook(){editing=null;fillForm({title:"",author:"Bunga",desc:"",coll:"",theme:"paper",pal:"apricot",motif:"tree",sound:"off"});
+function newBook(){editing=null;fillForm({title:"",author:"Bunga",desc:"",coll:"",closing:"",theme:"paper",pal:"apricot",motif:"tree",sound:"off"});
   $("edit-h").textContent="New book";$("delbook").style.display="none";
   $("epubrow").style.display="block";go("edit")}
 function editBook(){editing=curBook;fillForm(curBook);
@@ -704,7 +762,7 @@ function editBook(){editing=curBook;fillForm(curBook);
   $("epubrow").style.display="none";go("edit")}
 function fillForm(b){
   $("f-title").value=b.title||"";$("f-author").value=b.author||"";
-  $("f-desc").value=b.desc||"";$("f-coll").value=b.coll||"";
+  $("f-desc").value=b.desc||"";$("f-coll").value=b.coll||"";$("f-close").value=b.closing||"";
   $("colls").innerHTML=collections().map(c=>`<option value="${esc(c)}">`).join("");
   $("f-pal").innerHTML=Object.entries(PALETTES).map(([k,p])=>
     `<button class="tchip ${(b.pal||"apricot")===k?"on":""}" data-k="${k}" style="background:${p[0]};color:${p[3]}" onclick="pick('f-pal','${k}')">
@@ -721,6 +779,7 @@ function sel(box){const e=document.querySelector("#"+box+" .on");return e?e.data
 function saveBook(){
   const title=$("f-title").value.trim();if(!title)return toast("Give it a title first.");
   const d={title,author:$("f-author").value.trim(),desc:$("f-desc").value.trim(),coll:$("f-coll").value.trim(),
+    closing:$("f-close").value.trim(),
     theme:sel("f-themes")||"paper",pal:sel("f-pal")||"apricot",motif:sel("f-motif")||"tree",sound:sel("f-sound")||"off"};
   if(editing){Object.assign(editing,d);curBook=editing}
   else{const b={id:uid(),...d,chapters:[],created:Date.now()};DB.books.unshift(b);curBook=b}
@@ -770,13 +829,18 @@ function applyTheme(){
 }
 function openChap(id){
   curChap=curBook.chapters.find(c=>c.id===id);if(!curChap)return;
-  $("rpage").innerHTML=md2html(curChap.md)+`<div class="rend">${svg(curBook.motif||"tree")}
-    <p style="opacity:.55;font-size:.85em;margin:0 0 1.4em">End of chapter</p>
-    <button onclick="nextChap()">Next chapter ›</button></div>`;
-  applyTheme();paintHighlights();
+  if(curChap.done){DB.flags.rereads=(DB.flags.rereads||0)+1}
+  const closing=curBook.closing||CLOSERS[Math.abs(hashStr(curChap.id))%CLOSERS.length];
+  $("rpage").innerHTML=md2html(curChap.md)+`<div class="rend"><div class="breath"></div>${svg(curBook.motif||"tree")}
+    <p class="closing">${esc(closing)}</p>
+    <button onclick="nextChap()">Next chapter ›</button><div style="height:8vh"></div></div>`;
+  applyTheme();paintHighlights();requestAnimationFrame(drawMargins);
   $("rtitle").innerHTML=esc(curChap.title)+"<small>"+esc(curBook.title)+"</small>";
   const R=$("reader");R.classList.add("on");document.body.style.overflow="hidden";
   $("rtop").style.display="";$("rbot").style.display="";
+  $("candle").style.display=DB.settings.candle?"block":"none";
+  $("rprog").style.opacity=DB.settings.candle?"0":"1";
+  closeMargCard();
   requestAnimationFrame(()=>{R.scrollTop=(curChap.scroll||0)*Math.max(1,R.scrollHeight-R.clientHeight);updProg()});
   showChrome(true);setTimeout(()=>{if(!$("sheet").classList.contains("on"))showChrome(false)},2400);
   DB.lastRead={bookId:curBook.id,chapId:curChap.id,at:Date.now()};save();
@@ -787,6 +851,7 @@ function closeReader(){
   stopAuto();stopTimer();closeSheet();stopSound();$("btn-snd").classList.remove("on");
   showChrome(false);
   $("rtop").style.display="none";$("rbot").style.display="none";
+  $("candle").style.display="none";closeMargCard();
   $("hlpop").classList.remove("on");
   $("reader").classList.remove("on");document.body.style.overflow="";$("rprog").style.width="0";
   document.querySelector("meta[name=theme-color]").setAttribute("content","#FBF5EC");
@@ -796,7 +861,12 @@ function updProg(){
   const R=$("reader"),max=Math.max(1,R.scrollHeight-R.clientHeight),p=Math.min(1,R.scrollTop/max);
   $("rprog").style.width=p*100+"%";
   if(curChap){curChap.scroll=p;
-    if(p>.97&&!curChap.done){curChap.done=true;toast("Chapter finished");bank(curChap.words)}
+    if(p>.97&&!curChap.done){curChap.done=true;toast("Chapter finished");bank(curChap.words);
+      const h=new Date().getHours();
+      if(h<4)DB.flags.owl=true; if(h>=4&&h<7)DB.flags.lark=true;
+      const dk=today();DB.days[dk].chaps=(DB.days[dk].chaps||0)+1;
+      checkAchv()}
+    drawCandle(p);
     if(DB.lastRead)DB.lastRead.at=Date.now();save()}
 }
 $("reader").addEventListener("scroll",updProg,{passive:true});
@@ -804,6 +874,7 @@ $("reader").addEventListener("click",e=>{
   if(e.target.closest("button"))return;
   if(window.getSelection().toString().length)return;
   if($("sheet").classList.contains("on"))return;
+  if($("margcard").classList.contains("on")){closeMargCard();return}
   showChrome(!chromeOn);
 });
 function showChrome(on){chromeOn=on;$("rtop").classList.toggle("hide",!on);$("rbot").classList.toggle("hide",!on)}
@@ -847,7 +918,7 @@ document.addEventListener("selectionchange",()=>{
 function addHighlight(){
   if(!pendingSel)return;
   DB.highlights.unshift({id:uid(),bookId:curBook.id,chapId:curChap.id,chapTitle:curChap.title,text:pendingSel,note:"",at:Date.now()});
-  save();getSelection().removeAllRanges();$("hlpop").classList.remove("on");paintHighlights();toast("Highlighted.");
+  save();getSelection().removeAllRanges();$("hlpop").classList.remove("on");paintHighlights();drawMargins();checkAchv();toast("Highlighted.");
 }
 function paintHighlights(){
   const hs=DB.highlights.filter(h=>h.chapId===curChap.id);if(!hs.length)return;
@@ -886,6 +957,7 @@ function openSheet(which){
     `<button class="tchip ${curBook.theme===k?"on":""}" data-k="${k}" style="background:${t.bg};color:${t.fg};font-family:${t.font}" onclick="setTheme('${k}')">${t.name}</button>`).join("");
   $("s-sound").innerHTML=SOUNDS.map(k=>
     `<button class="chip ${curSound===k?"on":""}" data-k="${k}" onclick="setSound('${k}')">${SOUNDNAME[k]}</button>`).join("");
+  document.querySelectorAll("#s-candle .chip").forEach((c,i)=>c.classList.toggle("on",(i===0)===!!DB.settings.candle));
   pane(which||"type");
   $("sheet").classList.add("on");$("tap").classList.add("on");showChrome(false);
 }
@@ -941,7 +1013,9 @@ function nookSVG(m){
       <path d="M100 121h5a3 3 0 0 1 0 6h-5" stroke="#FFF" stroke-width="2.5" fill="none"/>`:""}
   </svg>`;
 }
+function toggleAch(){DB.showAch=!DB.showAch;save();renderStats()}
 function renderStats(){
+  checkAchv();
   const has=k=>DB.days[k]&&(DB.days[k].min>0||DB.days[k].words>0);
   let streak=0;const d=new Date();
   if(!has(today()))d.setDate(d.getDate()-1);
@@ -980,6 +1054,10 @@ function renderStats(){
       <div class="statbox"><b>${totW.toLocaleString("en")}</b><span>words read</span></div>
       <div class="statbox"><b>${chaps}</b><span>chapters done</span></div>
       <div class="statbox"><b>${done}</b><span>books finished</span></div></div>
+    <div class="label">Achievements <button onclick="toggleAch()">${DB.showAch?"hide":"show all"}</button></div>
+    <div class="achv">${ACHV.filter(a=>DB.showAch||DB.achieved[a.id]).map(a=>
+      `<div class="ach ${DB.achieved[a.id]?"":"lock"}"><b>${DB.achieved[a.id]?"":"· "}${a.n}</b><span>${a.d}</span></div>`).join("")
+      ||`<p class="hint">None yet. They arrive on their own.</p>`}</div>
     <div class="label">Recent highlights</div>
     ${DB.highlights.slice(0,4).map(h=>`<div class="note"><p>${esc(h.text)}</p><small>${esc(h.chapTitle)}</small></div>`).join("")
       ||`<p class="hint">None yet.</p>`}`;
@@ -1107,7 +1185,7 @@ async function importEpub(input){
     const b={id:uid(),title,author,desc:desc.slice(0,600),coll:"",theme:"ao3",
       pal:pals[Math.floor(Math.random()*pals.length)],motif:"books",sound:"off",
       chapters,created:Date.now()};
-    DB.books.unshift(b);curBook=b;editing=null;save();
+    DB.books.unshift(b);curBook=b;editing=null;DB.flags.epub=true;save();checkAchv();
     toast(chapters.length+" chapters imported.");
     go("book");
   }catch(err){
@@ -1223,6 +1301,173 @@ ${items}
   toast("EPUB ready — "+b.chapters.length+" chapters.");
 }
 
+
+/* ============ CANDLE ============ */
+function hashStr(x){let h=0;for(let i=0;i<x.length;i++)h=(h*31+x.charCodeAt(i))|0;return h}
+function setCandle(v){DB.settings.candle=v;save();
+  document.querySelectorAll("#s-candle .chip").forEach((c,i)=>c.classList.toggle("on",(i===0)===!!v));
+  $("candle").style.display=v?"block":"none";
+  $("rprog").style.opacity=v?"0":"1";
+  if(v&&curChap)drawCandle(curChap.scroll||0);
+}
+function drawCandle(p){
+  if(!DB.settings.candle)return;
+  const full=58,min=5,h=Math.max(min,full*(1-p)),y=84-h;
+  const b=$("cbody"),b2=$("cbody2"),w=$("cwick"),f=$("cflame"),f2=$("cflame2"),g=$("cglow"),pool=$("cpool");
+  if(!b)return;
+  b.setAttribute("y",y);b.setAttribute("height",h);
+  b2.setAttribute("y",y);b2.setAttribute("height",h);
+  w.setAttribute("y",y-7);
+  const fy=y-12;
+  f.setAttribute("cy",fy);f2.setAttribute("cy",fy+1.5);g.setAttribute("cy",fy);
+  const outNow=p>.985;
+  [f,f2,g].forEach(e=>e.setAttribute("opacity",outNow?0:(e===g?.16:1)));
+  pool.setAttribute("opacity",outNow?.9:0);
+  pool.setAttribute("rx",4+p*7);
+}
+
+/* ============ MARGINALIA ============ */
+function drawMargins(){
+  const page=$("rpage");
+  [...page.querySelectorAll(".marg")].forEach(e=>e.remove());
+  const hs=DB.highlights.filter(h=>h.chapId===(curChap&&curChap.id));
+  if(!hs.length)return;
+  [...page.querySelectorAll("mark")].forEach(m=>{
+    const h=hs.find(x=>m.textContent.indexOf(x.text.slice(0,40))>-1)||hs[0];
+    const tab=document.createElement("div");
+    tab.className="marg"+(h.note?" hasnote":"");
+    tab.style.top=m.offsetTop+"px";
+    tab.style.height=Math.max(16,m.offsetHeight)+"px";
+    tab.style.right=Math.max(2,DB.settings.mg/2-6)+"px";
+    tab.onclick=ev=>{ev.stopPropagation();openMargCard(h.id)};
+    page.appendChild(tab);
+  });
+}
+function openMargCard(id){
+  const h=DB.highlights.find(x=>x.id===id);if(!h)return;
+  $("margcard").innerHTML=`<q>${esc(h.text)}</q>
+    ${h.note?`<div class="n">${esc(h.note)}</div>`:`<div class="n" style="opacity:.6">No note yet.</div>`}
+    <div class="row">
+      <button onclick="editMargNote('${h.id}')">${h.note?"Edit note":"Add note"}</button>
+      <button onclick="delMarg('${h.id}')">Remove</button>
+      <button onclick="closeMargCard()">Close</button>
+    </div>`;
+  $("margcard").classList.add("on");
+}
+function closeMargCard(){const c=$("margcard");if(c)c.classList.remove("on")}
+function editMargNote(id){
+  const h=DB.highlights.find(x=>x.id===id);if(!h)return;
+  const n=prompt("Note:",h.note||"");
+  if(n!==null){h.note=n;save();drawMargins();openMargCard(id)}
+}
+function delMarg(id){
+  DB.highlights=DB.highlights.filter(x=>x.id!==id);save();closeMargCard();
+  if(curChap)openChap(curChap.id);
+}
+
+/* ============ ACHIEVEMENTS ============ */
+const ACHV=[
+  {id:"first",n:"First Light",d:"Finish your first chapter",t:s=>s.chaps>=1},
+  {id:"four",n:"One More Chapter",d:"Four chapters in a single day",t:s=>s.maxDay>=4},
+  {id:"owl",n:"Night Owl",d:"Finish a chapter after midnight",t:s=>!!DB.flags.owl},
+  {id:"lark",n:"Before the Heat",d:"Finish a chapter before 7am",t:s=>!!DB.flags.lark},
+  {id:"week",n:"Steady",d:"Seven days in a row",t:s=>s.best>=7},
+  {id:"book",n:"The End",d:"Finish a whole book",t:s=>s.done>=1},
+  {id:"five",n:"Collector",d:"Five books on the shelf",t:s=>DB.books.length>=5},
+  {id:"marks",n:"Annotator",d:"Twenty-five highlights",t:s=>DB.highlights.length>=25},
+  {id:"deep",n:"Deep Water",d:"Ten hours of reading",t:s=>s.hrs>=10},
+  {id:"arch",n:"Archivist",d:"One hundred thousand words",t:s=>s.words>=100000},
+  {id:"again",n:"Again",d:"Reread a chapter you'd finished",t:s=>(DB.flags.rereads||0)>=1},
+  {id:"ghost",n:"Ghost",d:"Come back after two weeks away",t:s=>!!DB.flags.ghost},
+  {id:"salv",n:"Salvager",d:"Import a book from an EPUB",t:s=>!!DB.flags.epub}
+];
+function computeStats(){
+  const has=k=>DB.days[k]&&(DB.days[k].min>0||DB.days[k].words>0);
+  let streak=0;const d=new Date();
+  if(!has(today()))d.setDate(d.getDate()-1);
+  for(;;){const k=d.toISOString().slice(0,10);if(!has(k))break;streak++;d.setDate(d.getDate()-1)}
+  const ks=Object.keys(DB.days).sort();
+  const totMin=ks.reduce((a,k)=>a+(DB.days[k].min||0),0);
+  const words=ks.reduce((a,k)=>a+(DB.days[k].words||0),0);
+  const maxDay=ks.reduce((a,k)=>Math.max(a,DB.days[k].chaps||0),0);
+  const chaps=DB.books.reduce((a,b)=>a+b.chapters.filter(c=>c.done).length,0);
+  const done=DB.books.filter(b=>b.chapters.length&&prog(b)===1).length;
+  DB.flags.best=Math.max(DB.flags.best||0,streak);
+  return {streak,best:DB.flags.best||0,hrs:totMin/60,totMin,words,chaps,done,maxDay};
+}
+function checkAchv(){
+  const s=computeStats();let got=[];
+  ACHV.forEach(a=>{if(!DB.achieved[a.id]&&a.t(s)){DB.achieved[a.id]=Date.now();got.push(a.n)}});
+  if(got.length){save();setTimeout(()=>toast("Unlocked — "+got.join(", ")),1200)}
+  return s;
+}
+
+/* ============ CHARACTER INDEX ============ */
+let idxCache=null,idxOpen=null;
+function buildIndex(){
+  const out={};
+  DB.names.forEach(n=>out[n]={name:n,total:0,books:[]});
+  DB.books.forEach(b=>{
+    b.chapters.forEach(c=>{
+      DB.names.forEach(n=>{
+        const m=c.md.match(new RegExp("\\b"+n.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","g"));
+        if(!m)return;
+        const e=out[n];e.total+=m.length;
+        let bk=e.books.find(x=>x.id===b.id);
+        if(!bk){bk={id:b.id,title:b.title,count:0,chaps:[]};e.books.push(bk)}
+        bk.count+=m.length;bk.chaps.push({id:c.id,title:c.title,count:m.length});
+      });
+    });
+  });
+  return Object.values(out).filter(x=>x.total>0).sort((a,b)=>b.total-a.total);
+}
+function renderIndex(){
+  idxCache=buildIndex();
+  $("idxnames").innerHTML=idxCache.length?idxCache.map(x=>
+    `<button class="nchip ${idxOpen===x.name?"on":""}" onclick="openName('${esc(x.name)}')">${esc(x.name)}<b>${x.total}</b></button>`).join("")
+    :`<p class="hint">No names found yet. Add some, or import a book first.</p>`;
+  const x=idxCache.find(y=>y.name===idxOpen);
+  $("idxdetail").innerHTML=x?`<div class="label">${esc(x.name)} · ${x.total} mentions</div>
+    ${x.books.map(b=>`<div class="idxrow"><span style="flex:1;color:var(--ink)">${esc(b.title)}</span><span>${b.count}</span></div>
+      ${b.chaps.sort((p,q)=>q.count-p.count).slice(0,6).map(c=>
+        `<button class="idxrow" style="margin-left:14px;background:var(--sand)" onclick="jumpTo('${b.id}','${c.id}')">
+          <span style="flex:1;color:var(--ink);font-weight:600">${esc(c.title)}</span><span>${c.count}</span></button>`).join("")}`).join("")}
+    <button class="ghost danger" onclick="removeName('${esc(x.name)}')">Remove ${esc(x.name)} from the index</button>`:"";
+}
+function openName(n){idxOpen=idxOpen===n?null:n;renderIndex()}
+function jumpTo(bid,cid){const b=DB.books.find(x=>x.id===bid);if(!b)return;curBook=b;openChap(cid)}
+function addName(){
+  const n=(prompt("Name to track:")||"").trim();
+  if(!n)return;
+  if(DB.names.includes(n))return toast("Already in the index.");
+  DB.names.push(n);save();renderIndex();toast(n+" added.");
+}
+function removeName(n){
+  DB.names=DB.names.filter(x=>x!==n);idxOpen=null;save();renderIndex();toast("Removed.");
+}
+const STOP=new Set(["The","And","But","She","He","They","It","I","A","In","On","At","To","Of","For","With","This","That",
+  "There","Then","When","What","Why","How","So","No","Yes","Not","His","Her","Their","You","We","My","One","All","Like",
+  "Dia","Gue","Lo","Aku","Kamu","Saya","Kalo","Kalau","Tapi","Terus","Udah","Nggak","Ada","Iya","Bang","Mas","Pak","Bu",
+  "Chapter","Bab","Jakarta","Indonesia"]);
+function suggestNames(){
+  const c={};
+  DB.books.forEach(b=>b.chapters.forEach(ch=>{
+    const t=ch.md.replace(/[#>*_`]/g," ");
+    const m=t.match(/(?:[^.!?\n]\s)([A-Z][a-z]{2,15})\b/g)||[];
+    m.forEach(x=>{const w=x.trim().split(/\s+/).pop();
+      if(STOP.has(w)||DB.names.includes(w))return;c[w]=(c[w]||0)+1});
+  }));
+  const top=Object.entries(c).filter(([w,n])=>n>=6).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  if(!top.length)return toast("Nothing new found.");
+  const pickd=prompt("Found these. Type the ones to add, separated by commas:\n\n"+
+    top.map(([w,n])=>w+" ("+n+")").join(", "));
+  if(!pickd)return;
+  let n=0;
+  pickd.split(",").map(x=>x.trim()).filter(Boolean).forEach(w=>{
+    if(!DB.names.includes(w)){DB.names.push(w);n++}});
+  save();renderIndex();toast(n+" added.");
+}
+
 function exportData(){
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob([JSON.stringify(DB)],{type:"application/json"}));
@@ -1250,8 +1495,18 @@ function renderUsage(){
   if(raw){try{DB=Object.assign(DB,JSON.parse(raw))}catch(e){}}
   DB.settings=Object.assign({size:18,lh:17,mg:24,sp:34,font:FONTS[0][1],vol:45,view:"grid",filter:"__all"},DB.settings||{});
   if(!FONTS.some(f=>f[1]===DB.settings.font))DB.settings.font=FONTS[0][1];
+  DB.achieved=DB.achieved||{};DB.flags=DB.flags||{};
+  DB.names=(DB.names&&DB.names.length)?DB.names:SEEDNAMES.slice();
+  if(DB.settings.candle===undefined)DB.settings.candle=1;
   DB.books.forEach(b=>{b.chapters=b.chapters||[];b.pal=b.pal||"apricot";b.motif=b.motif||"tree";
-    b.coll=b.coll||"";b.sound=b.sound||"off"});
+    b.coll=b.coll||"";b.sound=b.sound||"off";b.closing=b.closing||""});
+  const lastOpen=DB.flags.lastOpen;
+  if(lastOpen){
+    const gap=(Date.now()-lastOpen)/86400000;
+    if(gap>=14&&Object.keys(DB.days).length)DB.flags.ghost=true;
+  }
+  DB.flags.lastOpen=Date.now();
+  checkAchv();save();
   go("library");
 })();
 </script>
