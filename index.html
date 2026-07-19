@@ -23,7 +23,7 @@ button,input,textarea{font-family:inherit;font-size:16px;color:inherit}
 button{background:none;border:none;padding:0;cursor:pointer}
 .view{display:none}.view.on{display:block}
 
-.topbar{padding:calc(var(--safeT) + 18px) 20px 6px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.topbar{position:sticky;top:0;z-index:30;background:var(--cream);padding:calc(var(--safeT) + 18px) 20px 6px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .eyebrow{font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--soft);font-weight:600}
 .h1{font-family:var(--disp);font-size:32px;line-height:1.02;margin:7px 0 0;font-weight:700;letter-spacing:-.02em}
 .round{width:42px;height:42px;border-radius:50%;background:var(--card);display:grid;place-items:center;color:var(--soft);font-size:19px;flex:none;box-shadow:0 2px 8px rgba(120,95,60,.08)}
@@ -531,11 +531,16 @@ function setSound(k){
 
 /* ============ NAV ============ */
 function go(v){
+  closeSheet();
+  if(!$("reader").classList.contains("on")){
+    $("rtop").style.display="none";$("rbot").style.display="none";$("hlpop").classList.remove("on");
+  }
   document.querySelectorAll(".view").forEach(e=>e.classList.remove("on"));
   $("v-"+v).classList.add("on");window.scrollTo(0,0);
   $("dock").style.display=["library","stats","book"].includes(v)?"flex":"none";
   document.querySelectorAll("#dock button[data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===v));
-  ({library:renderShelf,stats:renderStats,book:renderBook,hl:renderHL,backup:renderUsage}[v]||(()=>{}))();
+  try{({library:renderShelf,stats:renderStats,book:renderBook,hl:renderHL,backup:renderUsage}[v]||(()=>{}))()}
+  catch(err){toast("Something failed to draw: "+err.message)}
 }
 function fabAction(){$("v-book").classList.contains("on")?go("chap"):newBook()}
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),2400)}
@@ -771,6 +776,7 @@ function openChap(id){
   applyTheme();paintHighlights();
   $("rtitle").innerHTML=esc(curChap.title)+"<small>"+esc(curBook.title)+"</small>";
   const R=$("reader");R.classList.add("on");document.body.style.overflow="hidden";
+  $("rtop").style.display="";$("rbot").style.display="";
   requestAnimationFrame(()=>{R.scrollTop=(curChap.scroll||0)*Math.max(1,R.scrollHeight-R.clientHeight);updProg()});
   showChrome(true);setTimeout(()=>{if(!$("sheet").classList.contains("on"))showChrome(false)},2400);
   DB.lastRead={bookId:curBook.id,chapId:curChap.id,at:Date.now()};save();
@@ -779,6 +785,9 @@ function openChap(id){
 }
 function closeReader(){
   stopAuto();stopTimer();closeSheet();stopSound();$("btn-snd").classList.remove("on");
+  showChrome(false);
+  $("rtop").style.display="none";$("rbot").style.display="none";
+  $("hlpop").classList.remove("on");
   $("reader").classList.remove("on");document.body.style.overflow="";$("rprog").style.width="0";
   document.querySelector("meta[name=theme-color]").setAttribute("content","#FBF5EC");
   renderBook();go("book");
